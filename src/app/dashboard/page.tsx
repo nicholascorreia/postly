@@ -13,7 +13,7 @@ export default function DashboardPage() {
     if (!session) {
       router.push('/login')
     }
-  }, [session])
+  }, [session, router])
 
   async function handleLogout() {
     await supabase.auth.signOut()
