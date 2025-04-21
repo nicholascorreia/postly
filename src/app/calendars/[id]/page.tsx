@@ -4,23 +4,22 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import Image from 'next/image'
+import { NewPostModal } from '@/components/NewPostModal'
 
-// Tipagem para os dados do calendário
 type Calendar = {
   id: string
   client_name: string
   created_at: string
 }
 
-// Tipagem para os posts vinculados a esse calendário
 type Post = {
   id: string
   calendar_id: string
-  text: string
+  content: string
   image_url: string
   scheduled_at: string
   created_at: string
-  is_published: boolean
+  approved: boolean
 }
 
 export default function CalendarPostsPage() {
@@ -28,10 +27,10 @@ export default function CalendarPostsPage() {
   const [calendar, setCalendar] = useState<Calendar | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
-  // Função que busca os dados do calendário e os posts
   useEffect(() => {
-    const loadPosts = async () => {
+    const load = async () => {
       const { data: calendarData, error: calendarError } = await supabase
         .from('calendars')
         .select('*')
@@ -59,7 +58,7 @@ export default function CalendarPostsPage() {
       setPosts(postsData)
     }
 
-    loadPosts()
+    load()
   }, [id])
 
   if (error) return <p>Erro: {error}</p>
@@ -67,9 +66,27 @@ export default function CalendarPostsPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <div className="bg-gray-100 p-4 rounded-md">
-        <h1 className="text-2xl font-bold">Calendário de {calendar.client_name}</h1>
-        <p className="text-sm text-gray-500">Criado em: {new Date(calendar.created_at).toLocaleString()}</p>
+      {showModal && (
+        <NewPostModal
+          calendarId={id as string}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Calendário de {calendar.client_name}</h1>
+          <p className="text-sm text-gray-500">
+            Criado em: {new Date(calendar.created_at).toLocaleString()}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+        >
+          + Novo Post
+        </button>
       </div>
 
       <div>
@@ -86,8 +103,10 @@ export default function CalendarPostsPage() {
                   className="rounded"
                 />
               )}
-              <p className="mt-2">{post.text}</p>
-              <p className="text-sm text-gray-500">Agendado para: {new Date(post.scheduled_at).toLocaleString()}</p>
+              <p className="mt-2">{post.content}</p>
+              <p className="text-sm text-gray-500">
+                Agendado para: {new Date(post.scheduled_at).toLocaleString()}
+              </p>
             </div>
           ))}
         </div>
