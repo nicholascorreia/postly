@@ -29,6 +29,10 @@ export default function CalendarPostsPage() {
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
 
+  const [publicLink, setPublicLink] = useState<string | null>(null)
+  const [linkLoading, setLinkLoading] = useState(false)
+
+  // 🔁 Carrega o calendário e seus posts
   useEffect(() => {
     const load = async () => {
       const { data: calendarData, error: calendarError } = await supabase
@@ -61,6 +65,17 @@ export default function CalendarPostsPage() {
     load()
   }, [id])
 
+  // 🟢 Gera ou reutiliza o link público via token
+  const handleGenerateLink = async () => {
+    setLinkLoading(true)
+    const res = await fetch(`/api/tokens/${id}`, { method: 'POST' })
+    const json = await res.json()
+    if (json.token) {
+      setPublicLink(`${window.location.origin}/view/${json.token}`)
+    }
+    setLinkLoading(false)
+  }
+
   if (error) return <p>Erro: {error}</p>
   if (!calendar) return <p>Carregando...</p>
 
@@ -81,13 +96,35 @@ export default function CalendarPostsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-        >
-          + Novo Post
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+          >
+            + Novo Post
+          </button>
+
+          <button
+            onClick={handleGenerateLink}
+            disabled={linkLoading}
+            className="bg-green-600 text-white px-4 py-2 rounded shadow"
+          >
+            {linkLoading ? 'Gerando...' : 'Gerar link público'}
+          </button>
+        </div>
       </div>
+
+      {publicLink && (
+        <div className="bg-gray-100 p-4 rounded-md flex items-center justify-between">
+          <code className="text-sm">{publicLink}</code>
+          <button
+            onClick={() => navigator.clipboard.writeText(publicLink)}
+            className="text-sm text-blue-600 underline ml-4"
+          >
+            Copiar
+          </button>
+        </div>
+      )}
 
       <div>
         <h2 className="text-xl font-semibold mt-6 mb-2">Posts Agendados</h2>
